@@ -188,6 +188,36 @@ crypto_pwhash_scryptsalsa208sha256(unsigned char *const       out,
 }
 
 int
+crypto_pwhash_scryptsalsa208sha256_2(unsigned char *const       out,
+                                     unsigned long long         outlen,
+                                     const char *const          passwd,
+                                     unsigned long long         passwdlen,
+                                     const unsigned char *const salt,
+                                     unsigned long long         saltLen,
+                                     unsigned long long opslimit, size_t memlimit)
+{
+    uint32_t N_log2;
+    uint32_t p;
+    uint32_t r;
+
+    memset(out, 0, outlen);
+    if (passwdlen > crypto_pwhash_scryptsalsa208sha256_PASSWD_MAX ||
+        outlen > crypto_pwhash_scryptsalsa208sha256_BYTES_MAX) {
+        errno = EFBIG; /* LCOV_EXCL_LINE */
+        return -1;     /* LCOV_EXCL_LINE */
+    }
+    if (outlen < crypto_pwhash_scryptsalsa208sha256_BYTES_MIN ||
+        pickparams(opslimit, memlimit, &N_log2, &p, &r) != 0) {
+        errno = EINVAL; /* LCOV_EXCL_LINE */
+        return -1;      /* LCOV_EXCL_LINE */
+    }
+    return crypto_pwhash_scryptsalsa208sha256_ll(
+        (const uint8_t *) passwd, (size_t) passwdlen, (const uint8_t *) salt,
+        saltLen, (uint64_t)(1) << N_log2,
+        r, p, out, (size_t) outlen);
+}
+
+int
 crypto_pwhash_scryptsalsa208sha256_str(
     char              out[crypto_pwhash_scryptsalsa208sha256_STRBYTES],
     const char *const passwd, unsigned long long passwdlen,
